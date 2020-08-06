@@ -1,0 +1,2 @@
+COMPONENT=KeepYDAppC
+include $(MAKERULES)
