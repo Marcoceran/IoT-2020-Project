@@ -18,7 +18,7 @@ module KeepYDC {
 	}
 }
 implementation {
-	message_t packet; //packet
+	message_t packet; 			//packet
 	event void Boot.booted() {
 		last = 0;				//we initialize the two
 		secondlast = 0;				//storage variables
@@ -40,8 +40,7 @@ implementation {
 	
 	event void Timer.fired() {
 		my_msg_t* prox_msg = (my_msg_t*)call Packet.getPayload(&packet, 1);
-		prox_msg -> topic = TOS_NODE_ID;
-	 	
+		prox_msg -> topic = TOS_NODE_ID;	// we write the id of the mote that entered proximity area in the packet
 	 	if(call AMSend.send(AM_BROADCAST_ADDR, &packet, 1) == SUCCESS){
 	 		dbg("radio_send", "Mote #%d: Sending message \n", TOS_NODE_ID);
 		}
@@ -59,8 +58,8 @@ implementation {
 		if(len != 1){
 			return buf;
 		}
-		printf("Mote #%u in proximity area\n", recm-> topic);
-		printfflush();
+		printf("Mote #%u in proximity area\n", recm-> topic);	// prints the alarm string, that gets forwarded to nodered
+		printfflush();						// flushes the print queue
 		return buf;
 	}
 }
