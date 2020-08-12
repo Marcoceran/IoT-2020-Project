@@ -4,6 +4,8 @@ typedef nx_struct my_msg {	//this is the type of the messages that we are sendin
 	nx_uint8_t topic;	//number of the mote that entered proximity area
 } my_msg_t;
 
+nx_uint8_t last;
+nx_uint8_t secondlast;
 
 module KeepYDC {
 	uses {
@@ -15,20 +17,20 @@ module KeepYDC {
 		interface Timer<TMilli>;	// timer interface
 	}
 }
-
 implementation {
-	message_t packet; 			// packet
-	event void Boot.booted() {		// boot event
+	message_t packet; //packet
+	event void Boot.booted() {
 		call AMControl.start();
 	}
-	
+	last = 0;
+	secondlast = 0;
 	event void AMControl.startDone(error_t err){
 		if(err == SUCCESS){
 			dbg("Mote", "Mote started!\n");
-			call Timer.startPeriodic(500);	// we're sending packets each 500ms
+			call Timer.startPeriodic(500);
 		} else{
 			dbgerror("Mote err", "Mote error, restart mote\n")
-			call AMControl.start();		// turns the radio on
+			call AMControl.start();
 		}
 	}
 	
@@ -37,7 +39,8 @@ implementation {
 	
 	event void Timer.fired() {
 		my_msg_t* prox_msg = (my_msg_t*)call Packet.getPayload(&packet, 1);
-		prox_msg -> topic = TOS_NODE_ID;	// we write the id of the mote that entered proximity area in the packet
+		prox_msg -> topic = TOS_NODE_ID;
+	 	
 	 	if(call AMSend.send(AM_BROADCAST_ADDR, &packet, 1) == SUCCESS){
 	 		dbg("radio_send", "Mote #%d: Sending message \n", TOS_NODE_ID);
 		}
@@ -48,11 +51,15 @@ implementation {
 	
 	event message_t* Receive.receive(message_t* buf,void* payload, uint8_t len) {
 		my_msg_t* recm = (my_msg_t*)payload;
+		if (recm->topic != last) {
+			secondlast = last;
+			last = recm->topic;
+		}
 		if(len != 1){
 			return buf;
 		}
-		printf("Mote #%u in proximity area\n", recm-> topic);	// prints the alarm string, that gets forwarded to nodered
-		printfflush();			// flushes the print queue
+		printf("Mote #%u in proximity area\n", recm-> topic);
+		printfflush();
 		return buf;
 	}
 }
