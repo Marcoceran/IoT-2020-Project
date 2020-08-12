@@ -4,8 +4,8 @@ typedef nx_struct my_msg {	//this is the type of the messages that we are sendin
 	nx_uint8_t topic;	//number of the mote that entered proximity area
 } my_msg_t;
 
-nx_uint8_t last;
-nx_uint8_t secondlast;
+nx_uint8_t last;		//those two variables keep track of the last two motes
+nx_uint8_t secondlast;		//that each mote got in touch with
 
 module KeepYDC {
 	uses {
@@ -20,10 +20,11 @@ module KeepYDC {
 implementation {
 	message_t packet; //packet
 	event void Boot.booted() {
+		last = 0;				//we initialize the two
+		secondlast = 0;				//storage variables
 		call AMControl.start();
 	}
-	last = 0;
-	secondlast = 0;
+	
 	event void AMControl.startDone(error_t err){
 		if(err == SUCCESS){
 			dbg("Mote", "Mote started!\n");
@@ -52,8 +53,8 @@ implementation {
 	event message_t* Receive.receive(message_t* buf,void* payload, uint8_t len) {
 		my_msg_t* recm = (my_msg_t*)payload;
 		if (recm->topic != last) {
-			secondlast = last;
-			last = recm->topic;
+			secondlast = last;	//each time a message is received the storage variables are updated, but
+			last = recm->topic;	//we skip this step if a mote gets consecutive messages from the same mote
 		}
 		if(len != 1){
 			return buf;
